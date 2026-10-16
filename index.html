@@ -1071,17 +1071,20 @@ setInterval(() => {
 </script>
 
 <script>
-  window.addEventListener("load", () => {
-    const screen = document.getElementById("loading-screen");
+window.addEventListener("load", () => {
+  const screen = document.getElementById("loading-screen");
 
-    if (screen) {
+  if (screen) {
+    setTimeout(() => {
       screen.classList.add("loaded");
 
       setTimeout(() => {
         screen.remove();
-      }, 6000);
-    }
-  });
+      }, 600);
+
+    }, 3000);
+  }
+});
 </script>
 
 </body>
