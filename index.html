@@ -2,679 +2,745 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#111827">
-  <title>WattScope — Suivi énergétique</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a0a0b">
+<title>WattScope | Supervision électrique</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    :root {
-      --bg: #f4f6fb;
-      --card: #fff;
-      --ink: #182238;
-      --muted: #7b8498;
-      --line: #e7eaf2;
-      --blue: #4263eb;
-      --green: #139b73;
-    }
+<style>
+:root {
+  --bg: #09090b;
+  --panel: #121215;
+  --panel2: #19191e;
+  --border: #29292f;
+  --red: #ed2939;
+  --red-dark: #a81725;
+  --white: #f5f5f7;
+  --muted: #8b8b96;
+  --green: #45d483;
+  --yellow: #ffcc66;
+}
 
-    * { box-sizing: border-box; }
+* { box-sizing: border-box; }
 
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: Inter, system-ui, -apple-system, sans-serif;
-    }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--white);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+}
 
-    button, select, input { font: inherit; }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 230px minmax(0, 1fr);
-      min-height: 100vh;
-    }
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
 
-    aside {
-      background: #111827;
-      color: white;
-      padding: 28px 17px;
-    }
+.sidebar {
+  width: 235px;
+  flex-shrink: 0;
+  background: #0e0e11;
+  border-right: 1px solid var(--border);
+  padding: 25px 16px;
+  display: flex;
+  flex-direction: column;
+}
 
-    .brand {
-      font-size: 23px;
-      font-weight: 800;
-      margin: 0 8px 38px;
-    }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 9px 28px;
+  border-bottom: 1px solid var(--border);
+}
 
-    .brand span { color: #8095ff; }
+.brand-icon {
+  background: var(--red);
+  width: 39px;
+  height: 39px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 900;
+  color: white;
+}
 
-    .nav-label {
-      color: #8590a5;
-      font-size: 10px;
-      letter-spacing: 1.5px;
-      margin: 24px 10px 10px;
-      text-transform: uppercase;
-    }
+.brand-name { font-size: 19px; font-weight: 850; letter-spacing: -0.8px; }
+.brand-sub { color: var(--muted); font-size: 10px; letter-spacing: 2px; margin-top: 3px; }
 
-    .nav-link {
-      display: block;
-      padding: 12px;
-      margin: 4px 0;
-      border-radius: 9px;
-      color: #c5cede;
-      text-decoration: none;
-      font-size: 13px;
-    }
+.nav-label {
+  color: #65656e;
+  font-size: 10px;
+  letter-spacing: 1.8px;
+  font-weight: 800;
+  padding: 25px 11px 10px;
+}
 
-    .nav-link.active, .nav-link:hover {
-      color: white;
-      background: #26334c;
-    }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #aaaab3;
+  padding: 12px 13px;
+  margin: 3px 0;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: .2s;
+}
 
-    .side-note {
-      margin-top: 55px;
-      border: 1px solid #344057;
-      border-radius: 12px;
-      padding: 13px;
-      font-size: 11px;
-      line-height: 1.7;
-      color: #c1cada;
-    }
+.nav-item:hover, .nav-item.active {
+  color: white;
+  background: #241316;
+}
 
-    main {
-      min-width: 0;
-      padding: 30px;
-    }
+.nav-item.active {
+  border-left: 3px solid var(--red);
+  padding-left: 10px;
+}
 
-    .topbar, .welcome, .card-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 15px;
-    }
+.nav-icon { width: 18px; text-align: center; }
 
-    .topbar { margin-bottom: 27px; }
+.sidebar-bottom {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding: 18px 8px 0;
+}
 
-    h1 {
-      font-size: 27px;
-      letter-spacing: -1px;
-      margin: 4px 0;
-    }
+.device-row { display: flex; align-items: center; gap: 9px; }
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 10px #45d48366;
+}
+.device-name { font-weight: 700; font-size: 12px; }
+.device-state { color: var(--muted); font-size: 11px; margin-top: 4px; }
 
-    h2 { font-size: 15px; margin: 0; }
+.main { flex: 1; min-width: 0; }
 
-    .muted, .eyebrow {
-      color: var(--muted);
-      font-size: 12px;
-    }
+.topbar {
+  min-height: 77px;
+  padding: 17px 30px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  background: #0d0d10;
+}
 
-    .eyebrow {
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-size: 10px;
-    }
+.breadcrumb { color: var(--muted); font-size: 12px; }
+.breadcrumb strong { color: white; }
 
-    .actions {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
+.top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-    .pill {
-      background: #fff1c9;
-      color: #8c6200;
-      border-radius: 30px;
-      padding: 8px 11px;
-      font-size: 10px;
-      font-weight: 800;
-    }
+.pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 11px; border: 1px solid var(--border);
+  border-radius: 6px; color: #c5c5cc; font-size: 11px;
+}
 
-    select, button {
-      background: white;
-      color: #354158;
-      border: 1px solid var(--line);
-      border-radius: 9px;
-      padding: 10px 12px;
-      cursor: pointer;
-      font-size: 12px;
-    }
+.pill.demo { color: var(--yellow); border-color: #594322; background: #241d12; }
 
-    button.primary {
-      background: var(--blue);
-      color: white;
-      border-color: var(--blue);
-    }
+.content { padding: 28px 30px 38px; max-width: 1700px; margin: auto; }
 
-    button:hover { opacity: .86; }
+.page-heading {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 15px; margin-bottom: 25px; flex-wrap: wrap;
+}
 
-    .welcome { margin-bottom: 20px; }
+.eyebrow {
+  color: var(--red); font-size: 10px; font-weight: 800;
+  letter-spacing: 2.3px; margin-bottom: 9px;
+}
 
-    .grid {
-      display: grid;
-      gap: 15px;
-    }
+h1 { font-size: clamp(25px, 3vw, 34px); letter-spacing: -1.1px; margin: 0; }
+.subtitle { color: var(--muted); margin-top: 9px; font-size: 12px; line-height: 1.6; }
 
-    .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.btn {
+  background: var(--panel2); color: white; border: 1px solid #35353d;
+  padding: 10px 13px; border-radius: 6px; font-size: 12px;
+}
+.btn:hover { border-color: var(--red); }
+.btn-red { background: var(--red); border-color: var(--red); font-weight: 750; }
+.btn-red:hover { background: #ff3949; }
 
-    .card {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 15px;
-      padding: 19px;
-      min-width: 0;
-      box-shadow: 0 5px 20px #26365a08;
-    }
+.section-heading {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 27px 0 14px; gap: 12px; flex-wrap: wrap;
+}
 
-    .stat-label {
-      color: var(--muted);
-      font-size: 12px;
-    }
+.section-heading h2 {
+  font-size: 13px; letter-spacing: .3px; margin: 0; font-weight: 750;
+}
 
-    .stat-value {
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -1px;
-      margin: 17px 0 7px;
-      overflow-wrap: anywhere;
-    }
+.section-caption { color: var(--muted); font-size: 11px; }
 
-    .unit {
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 500;
-      letter-spacing: 0;
-    }
+.grid { display: grid; gap: 14px; }
+.metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
-    .small { color: var(--muted); font-size: 11px; }
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  min-width: 0;
+}
 
-    .section-title {
-      margin: 27px 0 13px;
-      font-size: 14px;
-      font-weight: 800;
-    }
+.metric { padding: 19px; position: relative; overflow: hidden; }
+.metric::after {
+  content: ""; position: absolute; top: 0; left: 0;
+  height: 2px; width: 45px; background: var(--red);
+}
 
-    .middle {
-      grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
-    }
+.metric-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.metric-label { color: #b4b4bd; font-size: 11px; font-weight: 650; }
+.metric-symbol {
+  width: 31px; height: 31px; display: grid; place-items: center;
+  background: #271316; border-radius: 7px; color: #ff5360; font-size: 16px;
+}
+.metric-value {
+  font-size: clamp(23px, 2.2vw, 31px); font-weight: 800;
+  letter-spacing: -1px; margin: 19px 0 8px;
+  font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+}
+.metric-value small { font-size: 12px; color: #c3c3ca; letter-spacing: 0; font-weight: 600; }
+.metric-foot { color: var(--muted); font-size: 10px; }
+.metric-foot strong { color: var(--green); font-weight: 650; }
 
-    .bottom {
-      grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr);
-      margin-top: 15px;
-    }
+.phases { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
-    .card-head { align-items: flex-start; }
+.phase { padding: 18px; }
+.phase-head { display: flex; justify-content: space-between; align-items: center; }
+.phase-name { display: flex; align-items: center; gap: 9px; font-weight: 800; }
+.phase-letter {
+  display: grid; place-items: center; width: 32px; height: 32px;
+  border-radius: 6px; background: var(--red); font-weight: 900;
+}
+.phase-tag { font-size: 10px; color: var(--green); }
+.phase-voltage { font-size: 26px; font-weight: 800; margin: 20px 0 4px; }
+.phase-voltage small { font-size: 12px; color: var(--muted); font-weight: 500; }
+.phase-details {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  padding-top: 16px; margin-top: 16px; border-top: 1px solid var(--border);
+}
+.detail-label { color: var(--muted); font-size: 10px; margin-bottom: 6px; }
+.detail-value { font-size: 15px; font-weight: 750; }
 
-    .chart-box {
-      position: relative;
-      height: 260px;
-      margin-top: 20px;
-    }
+.charts { grid-template-columns: minmax(0, 1.6fr) minmax(270px, 1fr); }
+.chart-card { padding: 20px; }
+.chart-title { font-size: 12px; font-weight: 750; }
+.chart-subtitle { color: var(--muted); font-size: 10px; margin-top: 5px; }
+.chart-wrap { height: 250px; margin-top: 22px; position: relative; }
 
-    .phase {
-      margin-top: 23px;
-    }
+.history-card { padding: 20px; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 570px; }
+th {
+  color: #888893; text-align: left; font-size: 10px;
+  text-transform: uppercase; letter-spacing: .8px; font-weight: 700;
+  padding: 13px 12px; border-bottom: 1px solid var(--border);
+}
+td { padding: 14px 12px; font-size: 12px; border-bottom: 1px solid #222228; }
+tbody tr:hover { background: #19191e; }
+tbody tr:last-child td { border-bottom: 0; }
+.phase-chip { color: #ff6570; background: #291417; padding: 4px 7px; border-radius: 4px; font-size: 10px; }
+.status { color: var(--green); font-size: 11px; }
 
-    .phase-line {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      gap: 8px;
-      margin-bottom: 9px;
-    }
+.footer {
+  margin-top: 30px; padding-top: 17px; border-top: 1px solid var(--border);
+  color: #6f6f79; display: flex; justify-content: space-between;
+  gap: 12px; font-size: 10px; flex-wrap: wrap;
+}
 
-    .phase-bar {
-      height: 7px;
-      background: #edf0f6;
-      border-radius: 20px;
-      overflow: hidden;
-    }
+.notice {
+  display: none; padding: 12px 14px; margin: 0 0 17px;
+  border: 1px solid #594322; background: #241d12; color: #ffdc96;
+  border-radius: 6px; font-size: 12px;
+}
+.notice.show { display: block; }
 
-    .phase-bar div {
-      height: 100%;
-      background: var(--blue);
-      border-radius: 20px;
-    }
+@media (max-width: 1100px) {
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .charts { grid-template-columns: 1fr; }
+}
 
-    .phase-meta {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 7px;
-      color: var(--muted);
-      font-size: 10px;
-    }
+@media (max-width: 760px) {
+  .sidebar { width: 62px; padding: 17px 7px; }
+  .brand { padding: 0 4px 20px; justify-content: center; }
+  .brand-text, .nav-label, .nav-item span:not(.nav-icon),
+  .sidebar-bottom .device-info { display: none; }
+  .nav-item { justify-content: center; padding: 12px 5px; }
+  .nav-item.active { padding-left: 2px; }
+  .nav-icon { font-size: 17px; }
+  .sidebar-bottom { padding: 17px 7px 0; }
+  .device-row { justify-content: center; }
+  .topbar { padding: 15px; }
+  .content { padding: 22px 15px; }
+  .phases { grid-template-columns: 1fr; }
+  .metric { padding: 15px; }
+  .metric-value { font-size: 25px; }
+  .chart-card, .history-card { padding: 15px; }
+}
 
-    .phase-color {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-right: 6px;
-    }
-
-    .table-wrap { overflow-x: auto; margin-top: 17px; }
-
-    table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-
-    th {
-      text-align: left;
-      color: var(--muted);
-      font-size: 10px;
-      padding: 12px 8px;
-      border-bottom: 1px solid var(--line);
-    }
-
-    td {
-      font-size: 11px;
-      padding: 13px 8px;
-      border-bottom: 1px solid #f0f2f7;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 5px 8px;
-      border-radius: 30px;
-      background: #e4f7ee;
-      color: #12805e;
-      font-size: 10px;
-    }
-
-    .status-line {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      font-size: 12px;
-      margin-top: 15px;
-    }
-
-    .led {
-      width: 8px;
-      height: 8px;
-      background: #e6a23c;
-      border-radius: 50%;
-    }
-
-    .led.ok { background: #17a673; }
-
-    .notice {
-      padding: 12px 14px;
-      margin-bottom: 18px;
-      border-radius: 10px;
-      background: #eef2ff;
-      color: #3b4d9a;
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
-    .footer {
-      color: #929bad;
-      text-align: center;
-      font-size: 10px;
-      margin-top: 25px;
-    }
-
-    @media (max-width: 1050px) {
-      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .middle, .bottom { grid-template-columns: 1fr; }
-      main { padding: 22px; }
-    }
-
-    @media (max-width: 650px) {
-      .layout { display: block; }
-      aside { display: none; }
-      main { padding: 18px 13px 35px; }
-      .topbar { align-items: flex-start; flex-direction: column; }
-      h1 { font-size: 24px; }
-      .welcome { align-items: flex-start; flex-direction: column; }
-      .stats { gap: 10px; }
-      .card { padding: 14px; }
-      .stat-value { font-size: 23px; }
-      .chart-box { height: 220px; }
-    }
-
-    @media (max-width: 370px) {
-      .stats { grid-template-columns: 1fr; }
-    }
-  </style>
+@media (max-width: 420px) {
+  .metrics { grid-template-columns: 1fr 1fr; gap: 9px; }
+  .metric { padding: 12px; }
+  .metric-label { font-size: 10px; }
+  .metric-value { font-size: 22px; margin-top: 15px; }
+  .metric-symbol { width: 26px; height: 26px; }
+  .top-actions .pill { padding: 7px; }
+}
+</style>
 </head>
 
 <body>
 <div class="layout">
-  <aside>
-    <div class="brand">⚡ Watt<span>Scope</span></div>
 
-    <div class="nav-label">Énergie</div>
-    <a class="nav-link active" href="#dashboard">▦ &nbsp; Tableau de bord</a>
-    <a class="nav-link" href="#phases">ϟ &nbsp; Mes trois phases</a>
-    <a class="nav-link" href="#historique">▤ &nbsp; Historique</a>
-    <a class="nav-link" href="#analyse">◔ &nbsp; Analyse</a>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">W</div>
+      <div class="brand-text">
+        <div class="brand-name">WATTSCOPE</div>
+        <div class="brand-sub">POWER MONITORING</div>
+      </div>
+    </div>
 
-    <div class="nav-label">Données</div>
-    <a class="nav-link" href="#historique" onclick="exportCSV();return false">↓ &nbsp; Export CSV</a>
+    <div class="nav-label">SUPERVISION</div>
+    <div class="nav-item active" data-target="dashboard">
+      <span class="nav-icon">▦</span><span>Vue générale</span>
+    </div>
+    <div class="nav-item" data-target="phases">
+      <span class="nav-icon">ϟ</span><span>Réseau triphasé</span>
+    </div>
+    <div class="nav-item" data-target="charts">
+      <span class="nav-icon">▥</span><span>Analyses</span>
+    </div>
+    <div class="nav-item" data-target="history">
+      <span class="nav-icon">◷</span><span>Historique</span>
+    </div>
 
-    <div class="side-note">
-      <strong>WattScope</strong><br>
-      Suivi de consommation électrique triphasée.<br><br>
-      Les données de démonstration ne représentent pas des mesures réelles.
+    <div class="nav-label">SYSTÈME</div>
+    <div class="nav-item" id="connectionNav">
+      <span class="nav-icon">⌘</span><span>Connexion données</span>
+    </div>
+    <div class="nav-item" id="exportNav">
+      <span class="nav-icon">⇩</span><span>Exporter CSV</span>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="device-row">
+        <span class="status-dot" id="deviceDot"></span>
+        <div class="device-info">
+          <div class="device-name">WattScope ESP32</div>
+          <div class="device-state" id="deviceState">Simulation active</div>
+        </div>
+      </div>
     </div>
   </aside>
 
-  <main id="dashboard">
+  <main class="main">
     <header class="topbar">
-      <div>
-        <div class="eyebrow">MON INSTALLATION / ÉNERGIE</div>
-        <h1>Tableau de bord</h1>
-        <div class="muted">Vue générale de votre consommation</div>
-      </div>
-
-      <div class="actions">
-        <span class="pill" id="modePill">MODE DÉMO</span>
-        <select id="modeSelect" aria-label="Mode de données">
-          <option value="demo">Données simulées</option>
-          <option value="live">Données Supabase</option>
-        </select>
-        <button class="primary" onclick="refreshData()">↻ Actualiser</button>
+      <div class="breadcrumb">WATTSCOPE / <strong>SUPERVISION</strong></div>
+      <div class="top-actions">
+        <span class="pill demo" id="modeBadge">● MODE DÉMO</span>
+        <span class="pill">◷ <span id="clock">--:--:--</span></span>
       </div>
     </header>
 
-    <div id="notice" class="notice">
-      Mode démo actif : les valeurs ci-dessous sont fictives. Configurez Supabase dans le code pour charger vos mesures réelles.
-    </div>
-
-    <div class="welcome">
-      <div class="muted" id="rangeLabel">Mesures de démonstration</div>
-      <div class="muted" id="lastUpdate">En attente</div>
-    </div>
-
-    <div class="grid stats">
-      <section class="card">
-        <div class="stat-label">Puissance instantanée</div>
-        <div class="stat-value" id="totalPower">2,84 <span class="unit">kW</span></div>
-        <div class="small">Somme des trois phases</div>
-      </section>
-
-      <section class="card">
-        <div class="stat-label">Énergie cumulée</div>
-        <div class="stat-value" id="totalEnergy">12,68 <span class="unit">kWh</span></div>
-        <div class="small">Dernière valeur disponible</div>
-      </section>
-
-      <section class="card">
-        <div class="stat-label">Coût estimé</div>
-        <div class="stat-value" id="totalCost">3,17 <span class="unit">CHF</span></div>
-        <div class="small">Tarif indicatif : 0,25 CHF/kWh</div>
-      </section>
-
-      <section class="card">
-        <div class="stat-label">Connexion aux données</div>
-        <div class="stat-value" id="connection" style="font-size:21px">Démo</div>
-        <div class="status-line">
-          <span class="led" id="connectionLed"></span>
-          <span id="connectionDetail">Aucune connexion requise</span>
+    <div class="content" id="dashboard">
+      <div class="page-heading">
+        <div>
+          <div class="eyebrow">CENTRE DE CONTRÔLE ÉNERGÉTIQUE</div>
+          <h1>Tableau de supervision</h1>
+          <div class="subtitle">Surveillance électrique triphasée en temps réel.<br>
+            État du réseau, puissance et consommation énergétique.</div>
         </div>
-      </section>
-    </div>
+        <div class="top-actions">
+          <button class="btn" id="refreshBtn">↻ Actualiser</button>
+          <button class="btn btn-red" id="exportBtn">↓ Exporter les données</button>
+        </div>
+      </div>
 
-    <div class="section-title">Analyse de la consommation</div>
+      <div class="notice" id="notice"></div>
 
-    <div class="grid middle">
-      <section class="card">
-        <div class="card-head">
-          <div>
-            <h2>Évolution de la puissance</h2>
-            <div class="small">Historique des mesures disponibles</div>
+      <div class="section-heading">
+        <h2>INDICATEURS PRINCIPAUX</h2>
+        <span class="section-caption">Dernières mesures disponibles</span>
+      </div>
+
+      <div class="grid metrics">
+        <div class="card metric">
+          <div class="metric-top">
+            <span class="metric-label">PUISSANCE ACTIVE TOTALE</span>
+            <span class="metric-symbol">ϟ</span>
           </div>
-          <select id="period">
-            <option value="24">24 dernières heures</option>
-            <option value="168">7 derniers jours</option>
-            <option value="720">30 derniers jours</option>
-          </select>
+          <div class="metric-value" id="totalPower">4.82 <small>kW</small></div>
+          <div class="metric-foot">Somme des trois phases</div>
         </div>
 
-        <div class="chart-box">
-          <canvas id="powerChart"></canvas>
-        </div>
-      </section>
-
-      <section class="card" id="phases">
-        <h2>Les trois phases</h2>
-        <div class="small">Tension, courant et puissance</div>
-
-        <div class="phase">
-          <div class="phase-line">
-            <strong><i class="phase-color" style="background:#4263eb"></i>L1</strong>
-            <strong id="p1">1,12 kW</strong>
+        <div class="card metric">
+          <div class="metric-top">
+            <span class="metric-label">ÉNERGIE CUMULÉE</span>
+            <span class="metric-symbol">▤</span>
           </div>
-          <div class="phase-bar"><div id="bar1" style="width:39%"></div></div>
-          <div class="phase-meta">
-            <span id="v1">230 V</span><span id="a1">4,9 A</span>
-          </div>
+          <div class="metric-value" id="totalEnergy">1284.6 <small>kWh</small></div>
+          <div class="metric-foot">Compteur énergétique total</div>
         </div>
 
-        <div class="phase">
-          <div class="phase-line">
-            <strong><i class="phase-color" style="background:#18a999"></i>L2</strong>
-            <strong id="p2">0,94 kW</strong>
+        <div class="card metric">
+          <div class="metric-top">
+            <span class="metric-label">FRÉQUENCE RÉSEAU</span>
+            <span class="metric-symbol">∿</span>
           </div>
-          <div class="phase-bar"><div id="bar2" style="width:33%;background:#18a999"></div></div>
-          <div class="phase-meta">
-            <span id="v2">231 V</span><span id="a2">4,1 A</span>
+          <div class="metric-value" id="frequency">50.0 <small>Hz</small></div>
+          <div class="metric-foot">Fréquence nominale : 50 Hz</div>
+        </div>
+
+        <div class="card metric">
+          <div class="metric-top">
+            <span class="metric-label">FACTEUR DE PUISSANCE</span>
+            <span class="metric-symbol">φ</span>
+          </div>
+          <div class="metric-value" id="powerFactor">0.96</div>
+          <div class="metric-foot">Facteur de puissance global</div>
+        </div>
+      </div>
+
+      <div class="section-heading" id="phases">
+        <h2>SURVEILLANCE PAR PHASE</h2>
+        <span class="section-caption">Tension · Intensité · Puissance active</span>
+      </div>
+
+      <div class="grid phases">
+        <div class="card phase">
+          <div class="phase-head">
+            <div class="phase-name"><span class="phase-letter">L1</span> PHASE 01</div>
+            <span class="phase-tag">● ACTIVE</span>
+          </div>
+          <div class="phase-voltage" id="v1">230.4 <small>V</small></div>
+          <div class="detail-label">TENSION PHASE-NEUTRE</div>
+          <div class="phase-details">
+            <div><div class="detail-label">INTENSITÉ</div><div class="detail-value" id="i1">7.42 A</div></div>
+            <div><div class="detail-label">PUISSANCE</div><div class="detail-value" id="p1">1.68 kW</div></div>
           </div>
         </div>
 
-        <div class="phase">
-          <div class="phase-line">
-            <strong><i class="phase-color" style="background:#f0a43a"></i>L3</strong>
-            <strong id="p3">0,78 kW</strong>
+        <div class="card phase">
+          <div class="phase-head">
+            <div class="phase-name"><span class="phase-letter">L2</span> PHASE 02</div>
+            <span class="phase-tag">● ACTIVE</span>
           </div>
-          <div class="phase-bar"><div id="bar3" style="width:28%;background:#f0a43a"></div></div>
-          <div class="phase-meta">
-            <span id="v3">229 V</span><span id="a3">3,6 A</span>
+          <div class="phase-voltage" id="v2">229.7 <small>V</small></div>
+          <div class="detail-label">TENSION PHASE-NEUTRE</div>
+          <div class="phase-details">
+            <div><div class="detail-label">INTENSITÉ</div><div class="detail-value" id="i2">8.15 A</div></div>
+            <div><div class="detail-label">PUISSANCE</div><div class="detail-value" id="p2">1.82 kW</div></div>
           </div>
         </div>
 
-        <hr style="border:0;border-top:1px solid var(--line);margin:23px 0 15px">
-        <div class="phase-line">
-          <span class="muted">Facteur de puissance</span>
-          <strong id="pf">0,96</strong>
-        </div>
-        <div class="phase-line">
-          <span class="muted">Fréquence</span>
-          <strong id="hz">50,0 Hz</strong>
-        </div>
-      </section>
-    </div>
-
-    <div class="section-title">Historique et répartition</div>
-
-    <div class="grid bottom">
-      <section class="card" id="historique">
-        <div class="card-head">
-          <div>
-            <h2>Dernières mesures</h2>
-            <div class="small">Les données les plus récentes en premier</div>
+        <div class="card phase">
+          <div class="phase-head">
+            <div class="phase-name"><span class="phase-letter">L3</span> PHASE 03</div>
+            <span class="phase-tag">● ACTIVE</span>
           </div>
-          <button onclick="exportCSV()">↓ Export CSV</button>
+          <div class="phase-voltage" id="v3">231.1 <small>V</small></div>
+          <div class="detail-label">TENSION PHASE-NEUTRE</div>
+          <div class="phase-details">
+            <div><div class="detail-label">INTENSITÉ</div><div class="detail-value" id="i3">6.01 A</div></div>
+            <div><div class="detail-label">PUISSANCE</div><div class="detail-value" id="p3">1.32 kW</div></div>
+          </div>
         </div>
+      </div>
 
+      <div class="section-heading" id="charts">
+        <h2>ANALYSE ÉLECTRIQUE</h2>
+        <span class="section-caption">Évolution des mesures</span>
+      </div>
+
+      <div class="grid charts">
+        <div class="card chart-card">
+          <div class="chart-title">ÉVOLUTION DE LA PUISSANCE ACTIVE</div>
+          <div class="chart-subtitle">Comparaison des trois phases · kW</div>
+          <div class="chart-wrap"><canvas id="powerChart"></canvas></div>
+        </div>
+        <div class="card chart-card">
+          <div class="chart-title">RÉPARTITION DE LA PUISSANCE</div>
+          <div class="chart-subtitle">Contribution de chaque phase · kW</div>
+          <div class="chart-wrap"><canvas id="phaseChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-heading" id="history">
+        <h2>DERNIÈRES MESURES</h2>
+        <span class="section-caption" id="historyCaption">Historique de démonstration</span>
+      </div>
+
+      <div class="card history-card">
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>DATE / HEURE</th>
-                <th>PUISSANCE</th>
-                <th>ÉNERGIE</th>
-                <th>SOURCE</th>
+                <th>Horodatage</th>
+                <th>Phase</th>
+                <th>Tension</th>
+                <th>Intensité</th>
+                <th>Puissance</th>
+                <th>État</th>
               </tr>
             </thead>
-            <tbody id="measurementRows">
-              <tr><td colspan="4">Chargement…</td></tr>
-            </tbody>
+            <tbody id="historyBody"></tbody>
           </table>
         </div>
-      </section>
+      </div>
 
-      <section class="card" id="analyse">
-        <h2>Répartition de la puissance</h2>
-        <div class="small">Part relative de chaque phase</div>
-        <div class="chart-box" style="height:220px">
-          <canvas id="phaseChart"></canvas>
-        </div>
-      </section>
-    </div>
-
-    <div class="footer">
-      WattScope · Surveillance électrique triphasée · Vérifiez les mesures avant toute utilisation opérationnelle.
+      <div class="footer">
+        <span>WATTSCOPE © <span id="year"></span> · SUPERVISION ÉLECTRIQUE</span>
+        <span>INTERFACE DE DÉMONSTRATION · V1.1</span>
+      </div>
     </div>
   </main>
 </div>
 
 <script>
 /*
-  CONFIGURATION SUPABASE
-  1. Remplace SUPABASE_URL par l'URL de ton projet.
-  2. Remplace SUPABASE_ANON_KEY par ta clé publishable/anon.
-  3. Dans Supabase, crée public.measurements avec les colonnes documentées.
-  4. Configure les politiques RLS pour autoriser uniquement la lecture nécessaire.
+  CONFIGURATION SUPABASE — OPTIONNELLE
 
-  Ne place jamais la clé service_role dans ce fichier.
+  1. Remplace SUPABASE_URL et SUPABASE_ANON_KEY par les valeurs
+     de ton projet Supabase.
+  2. La table attendue est public.measurements.
+  3. Les colonnes attendues sont listées dans README plus bas.
+
+  Utilise uniquement une clé publique publishable/anon dans ce fichier.
+  Ne mets JAMAIS une clé service_role ou sb_secret_ dans le navigateur.
+
+  IMPORTANT : les politiques RLS de Supabase doivent protéger les données.
 */
 
 const SUPABASE_URL = "https://zswujzwkwiqesnqmaqsr.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_UFvN3Q8dZRU9amPWT-zT4w_aDLhYvQ_";
+const TABLE_NAME = "measurements";
 
-const TABLE = "measurements";
-const TARIFF_CHF_KWH = 0.25;
+// false = données simulées ; true = tente de lire Supabase.
+const USE_SUPABASE = false;
 
-let supabaseClient = null;
+const $ = (id) => document.getElementById(id);
+
+let currentMode = "demo";
 let measurements = [];
 let powerChart = null;
 let phaseChart = null;
-let currentMode = "demo";
 
-const $ = id => document.getElementById(id);
+const phaseColors = ["#ed2939", "#f5f5f7", "#777781"];
 
-const fmt = (value, digits = 2) =>
-  Number(value ?? 0).toLocaleString("fr-CH", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  });
-
-function setNotice(message) {
-  $("notice").textContent = message;
+function nowLabel(date = new Date()) {
+  return date.toLocaleTimeString("fr-CH", { hour12: false });
 }
 
-function setConnection(title, detail, ok = false) {
-  $("connection").textContent = title;
-  $("connectionDetail").textContent = detail;
-  $("connectionLed").classList.toggle("ok", ok);
+function number(value, digits = 2) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toFixed(digits) : "—";
 }
 
-function demoMeasurements() {
-  const now = Date.now();
-  let energy = 10.1;
-
-  return Array.from({ length: 24 }, (_, i) => {
-    const hour = 23 - i;
-    const power = 1.4 + Math.abs(Math.sin(i * 0.65)) * 1.9;
-    energy += power / 24;
-
-    return {
-      recorded_at: new Date(now - hour * 3600000).toISOString(),
-      voltage_l1: 230,
-      voltage_l2: 231,
-      voltage_l3: 229,
-      current_l1: 4.9,
-      current_l2: 4.1,
-      current_l3: 3.6,
-      power_l1: power * 0.394 * 1000,
-      power_l2: power * 0.331 * 1000,
-      power_l3: power * 0.275 * 1000,
-      total_active_power: power * 1000,
-      energy_total_kwh: energy,
-      frequency_hz: 50,
-      power_factor: 0.96,
-      _demo: true
-    };
-  }).reverse();
+function showNotice(message) {
+  const el = $("notice");
+  el.textContent = message;
+  el.classList.add("show");
 }
 
-function normalise(row) {
-  const n = key => row[key] == null ? null : Number(row[key]);
+function hideNotice() {
+  $("notice").classList.remove("show");
+}
 
-  const p1 = n("power_l1");
-  const p2 = n("power_l2");
-  const p3 = n("power_l3");
+function updateClock() {
+  $("clock").textContent = nowLabel();
+}
+setInterval(updateClock, 1000);
+updateClock();
+$("year").textContent = new Date().getFullYear();
+
+function generateDemoMeasurement() {
+  const t = new Date();
+  const previous = measurements[measurements.length - 1];
+  const energy = previous
+    ? previous.energy + previous.totalPower * (5 / 3600)
+    : 1284.6;
+
+  const v1 = 230.4 + (Math.random() - 0.5) * 1.6;
+  const v2 = 229.7 + (Math.random() - 0.5) * 1.8;
+  const v3 = 231.1 + (Math.random() - 0.5) * 1.5;
+
+  const i1 = 7.42 + (Math.random() - 0.5) * 0.45;
+  const i2 = 8.15 + (Math.random() - 0.5) * 0.55;
+  const i3 = 6.01 + (Math.random() - 0.5) * 0.4;
+
+  const pf = 0.94 + Math.random() * 0.04;
+  const p1 = v1 * i1 * pf / 1000;
+  const p2 = v2 * i2 * pf / 1000;
+  const p3 = v3 * i3 * pf / 1000;
 
   return {
-    ...row,
-    voltage_l1: n("voltage_l1"),
-    voltage_l2: n("voltage_l2"),
-    voltage_l3: n("voltage_l3"),
-    current_l1: n("current_l1"),
-    current_l2: n("current_l2"),
-    current_l3: n("current_l3"),
-    power_l1: p1,
-    power_l2: p2,
-    power_l3: p3,
-    total_active_power:
-      n("total_active_power") ??
-      ((p1 ?? 0) + (p2 ?? 0) + (p3 ?? 0)),
-    energy_total_kwh: n("energy_total_kwh"),
-    frequency_hz: n("frequency_hz"),
-    power_factor: n("power_factor"),
-    _demo: false
+    recorded_at: t.toISOString(),
+    voltage_l1: v1, voltage_l2: v2, voltage_l3: v3,
+    current_l1: i1, current_l2: i2, current_l3: i3,
+    power_l1: p1, power_l2: p2, power_l3: p3,
+    totalPower: p1 + p2 + p3,
+    energy,
+    frequency: 50 + (Math.random() - 0.5) * 0.12,
+    powerFactor: pf
   };
 }
 
-function setupCharts() {
-  if (typeof Chart === "undefined") return;
+function normalizeSupabaseRow(row) {
+  return {
+    recorded_at: row.recorded_at || new Date().toISOString(),
+    voltage_l1: Number(row.voltage_l1 ?? 0),
+    voltage_l2: Number(row.voltage_l2 ?? 0),
+    voltage_l3: Number(row.voltage_l3 ?? 0),
+    current_l1: Number(row.current_l1 ?? 0),
+    current_l2: Number(row.current_l2 ?? 0),
+    current_l3: Number(row.current_l3 ?? 0),
+    power_l1: Number(row.power_l1 ?? 0),
+    power_l2: Number(row.power_l2 ?? 0),
+    power_l3: Number(row.power_l3 ?? 0),
+    totalPower: Number(row.total_active_power ??
+      (Number(row.power_l1 || 0) + Number(row.power_l2 || 0) + Number(row.power_l3 || 0))),
+    energy: Number(row.energy_total_kwh ?? 0),
+    frequency: Number(row.frequency_hz ?? 50),
+    powerFactor: Number(row.power_factor ?? 1)
+  };
+}
 
-  powerChart = new Chart($("powerChart"), {
-    type: "line",
-    data: {
-      labels: [],
-      datasets: [{
-        label: "Puissance (kW)",
-        data: [],
-        borderColor: "#4263eb",
-        backgroundColor: "rgba(66,99,235,.12)",
-        fill: true,
-        tension: 0.35,
-        pointRadius: 2,
-        borderWidth: 2
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { intersect: false, mode: "index" },
-      plugins: { legend: { display: false } },
-      scales: {
-        x: {
-          grid: { display: false },
-          ticks: { maxTicksLimit: 7, maxRotation: 0 }
-        },
-        y: {
-          beginAtZero: true,
-          title: { display: true, text: "kW" }
-        }
-      }
-    }
+function renderDashboard(m) {
+  if (!m) return;
+
+  $("totalPower").innerHTML = `${number(m.totalPower)} <small>kW</small>`;
+  $("totalEnergy").innerHTML = `${number(m.energy, 1)} <small>kWh</small>`;
+  $("frequency").innerHTML = `${number(m.frequency, 2)} <small>Hz</small>`;
+  $("powerFactor").textContent = number(m.powerFactor, 2);
+
+  [1, 2, 3].forEach((n) => {
+    $("v" + n).innerHTML = `${number(m["voltage_l" + n], 1)} <small>V</small>`;
+    $("i" + n).textContent = `${number(m["current_l" + n])} A`;
+    $("p" + n).textContent = `${number(m["power_l" + n])} kW`;
   });
 
+  renderHistory();
+  renderCharts();
+}
+
+function renderHistory() {
+  const rows = [];
+
+  measurements.slice(-8).reverse().forEach((m) => {
+    [1, 2, 3].forEach((n) => {
+      rows.push({
+        time: new Date(m.recorded_at),
+        phase: n,
+        voltage: m["voltage_l" + n],
+        current: m["current_l" + n],
+        power: m["power_l" + n]
+      });
+    });
+  });
+
+  $("historyBody").innerHTML = rows.slice(0, 12).map((r) => `
+    <tr>
+      <td>${escapeHTML(r.time.toLocaleString("fr-CH"))}</td>
+      <td><span class="phase-chip">L${r.phase}</span></td>
+      <td>${number(r.voltage, 1)} V</td>
+      <td>${number(r.current)} A</td>
+      <td><strong>${number(r.power)} kW</strong></td>
+      <td><span class="status">● Mesuré</span></td>
+    </tr>
+  `).join("");
+
+  $("historyCaption").textContent =
+    currentMode === "demo" ? "Historique de démonstration" : "Mesures chargées depuis Supabase";
+}
+
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;"
+  })[char]);
+}
+
+function chartOptions() {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: {
+        labels: { color: "#c4c4cd", usePointStyle: true, boxWidth: 8, padding: 18 }
+      },
+      tooltip: {
+        backgroundColor: "#19191e",
+        borderColor: "#393940",
+        borderWidth: 1,
+        titleColor: "#fff",
+        bodyColor: "#ddd"
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: "#858590", maxTicksLimit: 7 },
+        grid: { color: "#25252b" },
+        border: { color: "#35353d" }
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { color: "#858590" },
+        grid: { color: "#25252b" },
+        border: { display: false }
+      }
+    }
+  };
+}
+
+function renderCharts() {
+  const recent = measurements.slice(-20);
+  const labels = recent.map(m =>
+    new Date(m.recorded_at).toLocaleTimeString("fr-CH", {
+      hour: "2-digit", minute: "2-digit", second: "2-digit"
+    })
+  );
+
+  const datasets = [
+    { label: "L1", data: recent.map(m => m.power_l1), borderColor: "#ed2939", backgroundColor: "#ed293920" },
+    { label: "L2", data: recent.map(m => m.power_l2), borderColor: "#f5f5f7", backgroundColor: "#f5f5f720" },
+    { label: "L3", data: recent.map(m => m.power_l3), borderColor: "#777781", backgroundColor: "#77778120" }
+  ].map(ds => ({
+    ...ds, tension: 0.35, borderWidth: 2, pointRadius: 0, fill: false
+  }));
+
+  if (powerChart) powerChart.destroy();
+  powerChart = new Chart($("powerChart"), {
+    type: "line",
+    data: { labels, datasets },
+    options: chartOptions()
+  });
+
+  if (phaseChart) phaseChart.destroy();
   phaseChart = new Chart($("phaseChart"), {
     type: "doughnut",
     data: {
       labels: ["Phase L1", "Phase L2", "Phase L3"],
       datasets: [{
-        data: [1120, 940, 780],
-        backgroundColor: ["#4263eb", "#18a999", "#f0a43a"],
-        borderWidth: 0
+        data: recent.length ? [
+          recent[recent.length - 1].power_l1,
+          recent[recent.length - 1].power_l2,
+          recent[recent.length - 1].power_l3
+        ] : [0, 0, 0],
+        backgroundColor: phaseColors,
+        borderColor: "#121215",
+        borderWidth: 5,
+        hoverOffset: 5
       }]
     },
     options: {
@@ -684,265 +750,152 @@ function setupCharts() {
       plugins: {
         legend: {
           position: "bottom",
-          labels: { usePointStyle: true, padding: 18 }
+          labels: { color: "#c4c4cd", usePointStyle: true, padding: 20 }
+        },
+        tooltip: {
+          backgroundColor: "#19191e",
+          callbacks: {
+            label: (context) => ` ${context.label}: ${Number(context.raw).toFixed(2)} kW`
+          }
         }
       }
     }
   });
 }
 
-function render() {
-  if (!measurements.length) {
-    $("measurementRows").innerHTML =
-      '<tr><td colspan="4">Aucune mesure disponible.</td></tr>';
-    return;
-  }
-
-  const latest = measurements[measurements.length - 1];
-  const p1 = latest.power_l1 ?? 0;
-  const p2 = latest.power_l2 ?? 0;
-  const p3 = latest.power_l3 ?? 0;
-  const totalW = latest.total_active_power ?? (p1 + p2 + p3);
-  const totalKW = totalW / 1000;
-  const energy = latest.energy_total_kwh;
-  const phaseTotal = Math.max(1, p1 + p2 + p3);
-
-  $("totalPower").innerHTML =
-    `${fmt(totalKW)} <span class="unit">kW</span>`;
-
-  $("totalEnergy").innerHTML =
-    `${energy == null ? "—" : fmt(energy)} <span class="unit">kWh</span>`;
-
-  $("totalCost").innerHTML =
-    `${energy == null ? "—" : fmt(energy * TARIFF_CHF_KWH)} <span class="unit">CHF</span>`;
-
-  $("p1").textContent = `${fmt(p1 / 1000)} kW`;
-  $("p2").textContent = `${fmt(p2 / 1000)} kW`;
-  $("p3").textContent = `${fmt(p3 / 1000)} kW`;
-
-  $("bar1").style.width = `${p1 / phaseTotal * 100}%`;
-  $("bar2").style.width = `${p2 / phaseTotal * 100}%`;
-  $("bar3").style.width = `${p3 / phaseTotal * 100}%`;
-
-  ["1", "2", "3"].forEach((n, i) => {
-    const phase = i + 1;
-    const voltage = latest[`voltage_l${phase}`];
-    const current = latest[`current_l${phase}`];
-
-    $(`v${n}`).textContent =
-      voltage == null ? "— V" : `${fmt(voltage, 1)} V`;
-
-    $(`a${n}`).textContent =
-      current == null ? "— A" : `${fmt(current, 2)} A`;
-  });
-
-  $("pf").textContent =
-    latest.power_factor == null ? "—" : fmt(latest.power_factor, 2);
-
-  $("hz").textContent =
-    latest.frequency_hz == null
-      ? "—"
-      : `${fmt(latest.frequency_hz, 1)} Hz`;
-
-  $("measurementRows").innerHTML = measurements
-    .slice()
-    .reverse()
-    .slice(0, 10)
-    .map(row => {
-      const date = new Date(row.recorded_at);
-      const dateText = Number.isNaN(date.getTime())
-        ? "Date inconnue"
-        : date.toLocaleString("fr-CH", {
-            day: "2-digit",
-            month: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit"
-          });
-
-      const power = row.total_active_power == null
-        ? "—"
-        : `${fmt(row.total_active_power / 1000)} kW`;
-
-      const energyText = row.energy_total_kwh == null
-        ? "—"
-        : `${fmt(row.energy_total_kwh)} kWh`;
-
-      return `<tr>
-        <td>${dateText}</td>
-        <td><strong>${power}</strong></td>
-        <td>${energyText}</td>
-        <td><span class="badge">${row._demo ? "Démo" : "Supabase"}</span></td>
-      </tr>`;
-    }).join("");
-
-  if (powerChart) {
-    const periodHours = Number($("period").value);
-    const cutoff = Date.now() - periodHours * 3600000;
-    const filtered = measurements.filter(row =>
-      new Date(row.recorded_at).getTime() >= cutoff
-    );
-
-    powerChart.data.labels = filtered.map(row =>
-      new Date(row.recorded_at).toLocaleString("fr-CH", {
-        day: "2-digit",
-        month: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-      })
-    );
-
-    powerChart.data.datasets[0].data = filtered.map(row =>
-      row.total_active_power == null
-        ? null
-        : Number((row.total_active_power / 1000).toFixed(3))
-    );
-
-    powerChart.update();
-  }
-
-  if (phaseChart) {
-    phaseChart.data.datasets[0].data = [p1, p2, p3];
-    phaseChart.update();
-  }
-
-  $("lastUpdate").textContent =
-    "Actualisé à " + new Date().toLocaleTimeString("fr-CH", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    });
+function setMode(mode) {
+  currentMode = mode;
+  const isDemo = mode === "demo";
+  $("modeBadge").textContent = isDemo ? "● MODE DÉMO" : "● SUPABASE";
+  $("modeBadge").classList.toggle("demo", isDemo);
+  $("deviceState").textContent = isDemo ? "Simulation active" : "Données connectées";
+  $("deviceDot").style.background = isDemo ? "#ffcc66" : "#45d483";
 }
 
-async function initSupabase() {
-  const configured =
-    SUPABASE_URL.startsWith("https://") &&
-    !SUPABASE_URL.includes("TON-PROJET") &&
-    SUPABASE_ANON_KEY.length > 20 &&
-    !SUPABASE_ANON_KEY.includes("TA_CLE");
+function addDemoReading() {
+  measurements.push(generateDemoMeasurement());
+  if (measurements.length > 120) measurements.shift();
+  renderDashboard(measurements[measurements.length - 1]);
+}
 
-  if (!configured) {
-    throw new Error(
-      "Supabase n'est pas configuré. Remplace l'URL et la clé publique dans le code."
-    );
+async function loadSupabase() {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error("URL ou clé publique Supabase manquante.");
   }
-
   if (!window.supabase) {
-    throw new Error("Impossible de charger la bibliothèque Supabase.");
+    throw new Error("La bibliothèque Supabase n'a pas pu être chargée.");
   }
 
-  supabaseClient = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-  );
-
-  const periodHours = Number($("period").value);
-  const cutoff = new Date(Date.now() - periodHours * 3600000).toISOString();
-
-  const { data, error } = await supabaseClient
-    .from(TABLE)
-    .select(
-      "recorded_at, voltage_l1, voltage_l2, voltage_l3, " +
-      "current_l1, current_l2, current_l3, " +
-      "power_l1, power_l2, power_l3, total_active_power, " +
-      "energy_total_kwh, frequency_hz, power_factor"
-    )
-    .gte("recorded_at", cutoff)
-    .order("recorded_at", { ascending: true })
-    .limit(2000);
+  const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { data, error } = await client
+    .from(TABLE_NAME)
+    .select("*")
+    .order("recorded_at", { ascending: false })
+    .limit(60);
 
   if (error) throw error;
-
   if (!data || data.length === 0) {
-    throw new Error(
-      "La connexion fonctionne, mais aucune mesure n'a été trouvée pour cette période."
-    );
+    throw new Error("Aucune mesure trouvée dans la table measurements.");
   }
 
-  measurements = data.map(normalise);
+  measurements = data.map(normalizeSupabaseRow).reverse();
+  setMode("supabase");
+  hideNotice();
+  renderDashboard(measurements[measurements.length - 1]);
 }
 
-async function refreshData() {
-  currentMode = $("modeSelect").value;
-  $("modePill").textContent =
-    currentMode === "demo" ? "MODE DÉMO" : "MODE SUPABASE";
-
-  if (currentMode === "demo") {
-    measurements = demoMeasurements();
-    setConnection("Démo", "Valeurs fictives", false);
-    setNotice(
-      "Mode démo actif : ces données sont simulées et ne proviennent pas de ton installation électrique."
-    );
-    $("rangeLabel").textContent = "Mesures simulées";
-    render();
-    return;
-  }
-
-  $("connection").textContent = "Connexion…";
-  $("connectionDetail").textContent = "Lecture de Supabase";
-  $("connectionLed").classList.remove("ok");
-
+async function refreshDashboard() {
+  $("refreshBtn").textContent = "↻ Chargement...";
   try {
-    await initSupabase();
-    setConnection("Connecté", "Mesures reçues depuis Supabase", true);
-    setNotice(
-      "Mode Supabase : les valeurs affichées proviennent de la table measurements."
-    );
-    $("rangeLabel").textContent = "Données réelles stockées dans Supabase";
-    render();
+    if (USE_SUPABASE) {
+      await loadSupabase();
+    } else {
+      addDemoReading();
+      hideNotice();
+    }
   } catch (error) {
-    measurements = [];
-    render();
-    setConnection("Erreur", "Lecture impossible", false);
-    setNotice(
-      "Erreur Supabase : " + error.message +
-      " Vérifie l'URL, la clé publique, le nom de la table et les politiques RLS."
-    );
+    showNotice("Connexion impossible : " + error.message +
+      " — Affichage des données simulées.");
+    setMode("demo");
+    if (measurements.length === 0) {
+      for (let i = 0; i < 20; i++) addDemoReading();
+    } else {
+      addDemoReading();
+    }
+  } finally {
+    $("refreshBtn").textContent = "↻ Actualiser";
   }
 }
 
 function exportCSV() {
   if (!measurements.length) {
-    alert("Aucune mesure à exporter.");
+    showNotice("Aucune mesure à exporter.");
     return;
   }
 
-  const columns = [
-    "recorded_at", "voltage_l1", "voltage_l2", "voltage_l3",
-    "current_l1", "current_l2", "current_l3",
-    "power_l1", "power_l2", "power_l3",
-    "total_active_power", "energy_total_kwh",
-    "frequency_hz", "power_factor"
+  const headers = [
+    "recorded_at", "voltage_l1", "current_l1", "power_l1",
+    "voltage_l2", "current_l2", "power_l2",
+    "voltage_l3", "current_l3", "power_l3",
+    "total_active_power", "energy_total_kwh", "frequency_hz", "power_factor"
   ];
 
-  const csv = [
-    columns.join(";"),
-    ...measurements.map(row =>
-      columns.map(col => row[col] ?? "").join(";")
-    )
-  ].join("\r\n");
+  const lines = [headers.join(";")];
 
-  const blob = new Blob(["\ufeff" + csv], {
-    type: "text/csv;charset=utf-8;"
+  measurements.forEach(m => {
+    const row = [
+      m.recorded_at,
+      m.voltage_l1, m.current_l1, m.power_l1,
+      m.voltage_l2, m.current_l2, m.power_l2,
+      m.voltage_l3, m.current_l3, m.power_l3,
+      m.totalPower, m.energy, m.frequency, m.powerFactor
+    ];
+    lines.push(row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(";"));
   });
 
+  const blob = new Blob(["\uFEFF" + lines.join("\r\n")], {
+    type: "text/csv;charset=utf-8;"
+  });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "wattscope-mesures.csv";
+  link.download = `wattscope_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
   link.click();
+  link.remove();
   URL.revokeObjectURL(url);
 }
 
-$("modeSelect").addEventListener("change", refreshData);
-$("period").addEventListener("change", refreshData);
+$("refreshBtn").addEventListener("click", refreshDashboard);
+$("exportBtn").addEventListener("click", exportCSV);
+$("exportNav").addEventListener("click", exportCSV);
+$("connectionNav").addEventListener("click", () => {
+  showNotice(USE_SUPABASE
+    ? "Le mode Supabase est activé dans la configuration du fichier."
+    : "Le mode démo est actif. Pour tester Supabase, renseigne l'URL et la clé publique, puis définis USE_SUPABASE = true dans le fichier.");
+});
 
-setupCharts();
-refreshData();
+document.querySelectorAll(".nav-item[data-target]").forEach(item => {
+  item.addEventListener("click", () => {
+    document.querySelectorAll(".nav-item[data-target]").forEach(n => n.classList.remove("active"));
+    item.classList.add("active");
+    $(item.dataset.target).scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+});
 
-// En mode réel, recharge les données toutes les 30 secondes.
+// Démarrage : mesures de démonstration, sans connexion matérielle.
+setMode("demo");
+for (let i = 0; i < 20; i++) addDemoReading();
+
+// Si USE_SUPABASE est activé, tente le chargement réel au démarrage.
+if (USE_SUPABASE) refreshDashboard();
+
+// Simulation visuelle périodique uniquement en mode démo.
+// Ce n'est PAS une mesure électrique réelle.
 setInterval(() => {
-  if ($("modeSelect").value === "live") refreshData();
-}, 30000);
+  if (currentMode === "demo") addDemoReading();
+}, 5000);
 </script>
 </body>
 </html>
+
