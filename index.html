@@ -909,6 +909,20 @@ setInterval(() => {
   if (currentMode === "demo") addDemoReading();
 }, 5000);*/
 </script>
+
+  
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./service-worker.js")
+        .then(() => console.log("WattScope : service worker activé"))
+        .catch((error) => {
+          console.error("Erreur service worker :", error);
+        });
+    });
+  }
+</script>
+
 </body>
 </html>
 
