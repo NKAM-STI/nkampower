@@ -431,10 +431,118 @@ tbody tr:last-child td { border-bottom: 0; }
   }
 }
 
+  
+.access-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #000;
+  color: #f2eeea;
+}
+
+.access-box {
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+}
+
+.access-logo {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  margin-bottom: 16px;
+}
+
+.access-box h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px;
+  letter-spacing: 5px;
+  margin: 0;
+}
+
+.access-box > p {
+  color: #BB0000;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+}
+
+#access-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 35px;
+  text-align: left;
+}
+
+#access-form label {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: #aaa;
+}
+
+#access-code {
+  padding: 14px;
+  color: white;
+  background: #111;
+  border: 1px solid #333;
+  outline: none;
+  font-size: 16px;
+}
+
+#access-code:focus {
+  border-color: #BB0000;
+}
+
+#access-form button {
+  padding: 15px;
+  border: none;
+  background: #BB0000;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#access-error {
+  color: #ff5555;
+  font-size: 12px;
+  text-align: center;
+}
+
+
 </style>
 </head>
 
 <body>
+
+  
+<div id="access-screen" class="access-screen">
+  <div class="access-box">
+    <img src="./NKAM energy.png" alt="WattScope" class="access-logo">
+
+    <h1>WATTSCOPE</h1>
+    <p>ACCÈS SÉCURISÉ</p>
+
+    <form id="access-form">
+      <label for="access-code">CODE D'ACCÈS</label>
+      <input
+        id="access-code"
+        type="password"
+        placeholder="Saisir le code"
+        autocomplete="current-password"
+        required
+      >
+
+      <button type="submit">SE CONNECTER</button>
+      <p id="access-error" role="alert"></p>
+    </form>
+  </div>
+</div>
+
 
 <div id="loading-screen">
   <div class="loader-content">
@@ -1083,6 +1191,24 @@ window.addEventListener("load", () => {
       }, 600);
 
     }, 5000);
+  }
+});
+</script>
+
+<script>
+const ACCESS_CODE = "bt7h"; // À personnaliser
+
+document.getElementById("access-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const enteredCode = document.getElementById("access-code").value;
+  const error = document.getElementById("access-error");
+
+  if (enteredCode === ACCESS_CODE) {
+    document.getElementById("access-screen").remove();
+  } else {
+    error.textContent = "Code incorrect. Réessaie.";
+    document.getElementById("access-code").value = "";
   }
 });
 </script>
