@@ -337,15 +337,14 @@ tbody tr:last-child td { border-bottom: 0; }
 }
 
 .loader-logo {
-  display: grid;
-  place-items: center;
+  display: block;
   width: 66px;
   height: 66px;
+  object-fit: contain;
+  padding: 6px;
+  box-sizing: border-box;
   margin: 0 auto 24px;
   border: 2px solid #BB0000;
-  color: #CC0000;
-  font-size: 38px;
-  font-weight: 900;
   animation: logo-pulse 1.2s ease-in-out infinite;
 }
 
@@ -439,8 +438,7 @@ tbody tr:last-child td { border-bottom: 0; }
 
 <div id="loading-screen">
   <div class="loader-content">
-    <div class="loader-logo">W</div>
-
+<img src="./NKAM energy.png" class="loader-logo" alt="Logo WattScope">
     <div class="loader-title">WATTSCOPE</div>
     <div class="loader-subtitle">POWER MONITORING SYSTEM</div>
 
