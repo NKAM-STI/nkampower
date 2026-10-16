@@ -1152,17 +1152,15 @@ document.querySelectorAll(".nav-item[data-target]").forEach(item => {
 });
 
 // Démarrage : mesures de démonstration, sans connexion matérielle.
-/*setMode("demo");
-for (let i = 0; i < 20; i++) addDemoReading();
+// Démarrage automatique de WattScope
+refreshDashboard();
 
-// Si USE_SUPABASE est activé, tente le chargement réel au démarrage.
-if (USE_SUPABASE) refreshDashboard();
-
-// Simulation visuelle périodique uniquement en mode démo.
-// Ce n'est PAS une mesure électrique réelle.
+// Actualisation des mesures toutes les 10 secondes
 setInterval(() => {
-  if (currentMode === "demo") addDemoReading();
-}, 5000);*/
+  if (USE_SUPABASE) {
+    refreshDashboard();
+  }
+}, 10000);
 </script>
 
   
