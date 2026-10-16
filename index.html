@@ -1196,21 +1196,44 @@ window.addEventListener("load", () => {
 </script>
 
 <script>
-const ACCESS_CODE = "bt7h"; // À personnaliser
 
-document.getElementById("access-form").addEventListener("submit", (event) => {
+const ACCESS_CODE = "1234"; // Ton code d'accès
+const SESSION_KEY = "wattscope_access_until";
+const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+
+const accessScreen = document.getElementById("access-screen");
+const accessForm = document.getElementById("access-form");
+const accessError = document.getElementById("access-error");
+
+// Connexion automatique si les 30 jours ne sont pas écoulés
+const expiry = Number(localStorage.getItem(SESSION_KEY));
+
+if (expiry > Date.now()) {
+  accessScreen.remove();
+} else {
+  localStorage.removeItem(SESSION_KEY);
+}
+
+// Vérifier le code saisi
+accessForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  const enteredCode = document.getElementById("access-code").value;
-  const error = document.getElementById("access-error");
+  const enteredCode = document.getElementById("bt7h").value;
 
   if (enteredCode === ACCESS_CODE) {
-    document.getElementById("access-screen").remove();
+    // Mémoriser automatiquement l'accès pendant 30 jours
+    localStorage.setItem(
+      SESSION_KEY,
+      String(Date.now() + THIRTY_DAYS)
+    );
+
+    accessScreen.remove();
   } else {
-    error.textContent = "Code incorrect. Réessaie.";
+    accessError.textContent = "Code incorrect. Réessaie.";
     document.getElementById("access-code").value = "";
   }
 });
+
 </script>
 
 </body>
