@@ -1,0 +1,948 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>WattScope — Suivi énergétique</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg: #f4f6fb;
+      --card: #fff;
+      --ink: #182238;
+      --muted: #7b8498;
+      --line: #e7eaf2;
+      --blue: #4263eb;
+      --green: #139b73;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+    }
+
+    button, select, input { font: inherit; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 230px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    aside {
+      background: #111827;
+      color: white;
+      padding: 28px 17px;
+    }
+
+    .brand {
+      font-size: 23px;
+      font-weight: 800;
+      margin: 0 8px 38px;
+    }
+
+    .brand span { color: #8095ff; }
+
+    .nav-label {
+      color: #8590a5;
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      margin: 24px 10px 10px;
+      text-transform: uppercase;
+    }
+
+    .nav-link {
+      display: block;
+      padding: 12px;
+      margin: 4px 0;
+      border-radius: 9px;
+      color: #c5cede;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .nav-link.active, .nav-link:hover {
+      color: white;
+      background: #26334c;
+    }
+
+    .side-note {
+      margin-top: 55px;
+      border: 1px solid #344057;
+      border-radius: 12px;
+      padding: 13px;
+      font-size: 11px;
+      line-height: 1.7;
+      color: #c1cada;
+    }
+
+    main {
+      min-width: 0;
+      padding: 30px;
+    }
+
+    .topbar, .welcome, .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .topbar { margin-bottom: 27px; }
+
+    h1 {
+      font-size: 27px;
+      letter-spacing: -1px;
+      margin: 4px 0;
+    }
+
+    h2 { font-size: 15px; margin: 0; }
+
+    .muted, .eyebrow {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 10px;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      background: #fff1c9;
+      color: #8c6200;
+      border-radius: 30px;
+      padding: 8px 11px;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    select, button {
+      background: white;
+      color: #354158;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    button.primary {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+
+    button:hover { opacity: .86; }
+
+    .welcome { margin-bottom: 20px; }
+
+    .grid {
+      display: grid;
+      gap: 15px;
+    }
+
+    .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      padding: 19px;
+      min-width: 0;
+      box-shadow: 0 5px 20px #26365a08;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin: 17px 0 7px;
+      overflow-wrap: anywhere;
+    }
+
+    .unit {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+
+    .small { color: var(--muted); font-size: 11px; }
+
+    .section-title {
+      margin: 27px 0 13px;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .middle {
+      grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
+    }
+
+    .bottom {
+      grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr);
+      margin-top: 15px;
+    }
+
+    .card-head { align-items: flex-start; }
+
+    .chart-box {
+      position: relative;
+      height: 260px;
+      margin-top: 20px;
+    }
+
+    .phase {
+      margin-top: 23px;
+    }
+
+    .phase-line {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+
+    .phase-bar {
+      height: 7px;
+      background: #edf0f6;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .phase-bar div {
+      height: 100%;
+      background: var(--blue);
+      border-radius: 20px;
+    }
+
+    .phase-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .phase-color {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+
+    .table-wrap { overflow-x: auto; margin-top: 17px; }
+
+    table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+
+    th {
+      text-align: left;
+      color: var(--muted);
+      font-size: 10px;
+      padding: 12px 8px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    td {
+      font-size: 11px;
+      padding: 13px 8px;
+      border-bottom: 1px solid #f0f2f7;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 8px;
+      border-radius: 30px;
+      background: #e4f7ee;
+      color: #12805e;
+      font-size: 10px;
+    }
+
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      margin-top: 15px;
+    }
+
+    .led {
+      width: 8px;
+      height: 8px;
+      background: #e6a23c;
+      border-radius: 50%;
+    }
+
+    .led.ok { background: #17a673; }
+
+    .notice {
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      border-radius: 10px;
+      background: #eef2ff;
+      color: #3b4d9a;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .footer {
+      color: #929bad;
+      text-align: center;
+      font-size: 10px;
+      margin-top: 25px;
+    }
+
+    @media (max-width: 1050px) {
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .middle, .bottom { grid-template-columns: 1fr; }
+      main { padding: 22px; }
+    }
+
+    @media (max-width: 650px) {
+      .layout { display: block; }
+      aside { display: none; }
+      main { padding: 18px 13px 35px; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+      h1 { font-size: 24px; }
+      .welcome { align-items: flex-start; flex-direction: column; }
+      .stats { gap: 10px; }
+      .card { padding: 14px; }
+      .stat-value { font-size: 23px; }
+      .chart-box { height: 220px; }
+    }
+
+    @media (max-width: 370px) {
+      .stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="layout">
+  <aside>
+    <div class="brand">⚡ Watt<span>Scope</span></div>
+
+    <div class="nav-label">Énergie</div>
+    <a class="nav-link active" href="#dashboard">▦ &nbsp; Tableau de bord</a>
+    <a class="nav-link" href="#phases">ϟ &nbsp; Mes trois phases</a>
+    <a class="nav-link" href="#historique">▤ &nbsp; Historique</a>
+    <a class="nav-link" href="#analyse">◔ &nbsp; Analyse</a>
+
+    <div class="nav-label">Données</div>
+    <a class="nav-link" href="#historique" onclick="exportCSV();return false">↓ &nbsp; Export CSV</a>
+
+    <div class="side-note">
+      <strong>WattScope</strong><br>
+      Suivi de consommation électrique triphasée.<br><br>
+      Les données de démonstration ne représentent pas des mesures réelles.
+    </div>
+  </aside>
+
+  <main id="dashboard">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">MON INSTALLATION / ÉNERGIE</div>
+        <h1>Tableau de bord</h1>
+        <div class="muted">Vue générale de votre consommation</div>
+      </div>
+
+      <div class="actions">
+        <span class="pill" id="modePill">MODE DÉMO</span>
+        <select id="modeSelect" aria-label="Mode de données">
+          <option value="demo">Données simulées</option>
+          <option value="live">Données Supabase</option>
+        </select>
+        <button class="primary" onclick="refreshData()">↻ Actualiser</button>
+      </div>
+    </header>
+
+    <div id="notice" class="notice">
+      Mode démo actif : les valeurs ci-dessous sont fictives. Configurez Supabase dans le code pour charger vos mesures réelles.
+    </div>
+
+    <div class="welcome">
+      <div class="muted" id="rangeLabel">Mesures de démonstration</div>
+      <div class="muted" id="lastUpdate">En attente</div>
+    </div>
+
+    <div class="grid stats">
+      <section class="card">
+        <div class="stat-label">Puissance instantanée</div>
+        <div class="stat-value" id="totalPower">2,84 <span class="unit">kW</span></div>
+        <div class="small">Somme des trois phases</div>
+      </section>
+
+      <section class="card">
+        <div class="stat-label">Énergie cumulée</div>
+        <div class="stat-value" id="totalEnergy">12,68 <span class="unit">kWh</span></div>
+        <div class="small">Dernière valeur disponible</div>
+      </section>
+
+      <section class="card">
+        <div class="stat-label">Coût estimé</div>
+        <div class="stat-value" id="totalCost">3,17 <span class="unit">CHF</span></div>
+        <div class="small">Tarif indicatif : 0,25 CHF/kWh</div>
+      </section>
+
+      <section class="card">
+        <div class="stat-label">Connexion aux données</div>
+        <div class="stat-value" id="connection" style="font-size:21px">Démo</div>
+        <div class="status-line">
+          <span class="led" id="connectionLed"></span>
+          <span id="connectionDetail">Aucune connexion requise</span>
+        </div>
+      </section>
+    </div>
+
+    <div class="section-title">Analyse de la consommation</div>
+
+    <div class="grid middle">
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <h2>Évolution de la puissance</h2>
+            <div class="small">Historique des mesures disponibles</div>
+          </div>
+          <select id="period">
+            <option value="24">24 dernières heures</option>
+            <option value="168">7 derniers jours</option>
+            <option value="720">30 derniers jours</option>
+          </select>
+        </div>
+
+        <div class="chart-box">
+          <canvas id="powerChart"></canvas>
+        </div>
+      </section>
+
+      <section class="card" id="phases">
+        <h2>Les trois phases</h2>
+        <div class="small">Tension, courant et puissance</div>
+
+        <div class="phase">
+          <div class="phase-line">
+            <strong><i class="phase-color" style="background:#4263eb"></i>L1</strong>
+            <strong id="p1">1,12 kW</strong>
+          </div>
+          <div class="phase-bar"><div id="bar1" style="width:39%"></div></div>
+          <div class="phase-meta">
+            <span id="v1">230 V</span><span id="a1">4,9 A</span>
+          </div>
+        </div>
+
+        <div class="phase">
+          <div class="phase-line">
+            <strong><i class="phase-color" style="background:#18a999"></i>L2</strong>
+            <strong id="p2">0,94 kW</strong>
+          </div>
+          <div class="phase-bar"><div id="bar2" style="width:33%;background:#18a999"></div></div>
+          <div class="phase-meta">
+            <span id="v2">231 V</span><span id="a2">4,1 A</span>
+          </div>
+        </div>
+
+        <div class="phase">
+          <div class="phase-line">
+            <strong><i class="phase-color" style="background:#f0a43a"></i>L3</strong>
+            <strong id="p3">0,78 kW</strong>
+          </div>
+          <div class="phase-bar"><div id="bar3" style="width:28%;background:#f0a43a"></div></div>
+          <div class="phase-meta">
+            <span id="v3">229 V</span><span id="a3">3,6 A</span>
+          </div>
+        </div>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:23px 0 15px">
+        <div class="phase-line">
+          <span class="muted">Facteur de puissance</span>
+          <strong id="pf">0,96</strong>
+        </div>
+        <div class="phase-line">
+          <span class="muted">Fréquence</span>
+          <strong id="hz">50,0 Hz</strong>
+        </div>
+      </section>
+    </div>
+
+    <div class="section-title">Historique et répartition</div>
+
+    <div class="grid bottom">
+      <section class="card" id="historique">
+        <div class="card-head">
+          <div>
+            <h2>Dernières mesures</h2>
+            <div class="small">Les données les plus récentes en premier</div>
+          </div>
+          <button onclick="exportCSV()">↓ Export CSV</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>DATE / HEURE</th>
+                <th>PUISSANCE</th>
+                <th>ÉNERGIE</th>
+                <th>SOURCE</th>
+              </tr>
+            </thead>
+            <tbody id="measurementRows">
+              <tr><td colspan="4">Chargement…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="analyse">
+        <h2>Répartition de la puissance</h2>
+        <div class="small">Part relative de chaque phase</div>
+        <div class="chart-box" style="height:220px">
+          <canvas id="phaseChart"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer">
+      WattScope · Surveillance électrique triphasée · Vérifiez les mesures avant toute utilisation opérationnelle.
+    </div>
+  </main>
+</div>
+
+<script>
+/*
+  CONFIGURATION SUPABASE
+  1. Remplace SUPABASE_URL par l'URL de ton projet.
+  2. Remplace SUPABASE_ANON_KEY par ta clé publishable/anon.
+  3. Dans Supabase, crée public.measurements avec les colonnes documentées.
+  4. Configure les politiques RLS pour autoriser uniquement la lecture nécessaire.
+
+  Ne place jamais la clé service_role dans ce fichier.
+*/
+
+const SUPABASE_URL = "https://TON-PROJET.supabase.co";
+const SUPABASE_ANON_KEY = "TA_CLE_PUBLIQUE_SUPABASE";
+
+const TABLE = "measurements";
+const TARIFF_CHF_KWH = 0.25;
+
+let supabaseClient = null;
+let measurements = [];
+let powerChart = null;
+let phaseChart = null;
+let currentMode = "demo";
+
+const $ = id => document.getElementById(id);
+
+const fmt = (value, digits = 2) =>
+  Number(value ?? 0).toLocaleString("fr-CH", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits
+  });
+
+function setNotice(message) {
+  $("notice").textContent = message;
+}
+
+function setConnection(title, detail, ok = false) {
+  $("connection").textContent = title;
+  $("connectionDetail").textContent = detail;
+  $("connectionLed").classList.toggle("ok", ok);
+}
+
+function demoMeasurements() {
+  const now = Date.now();
+  let energy = 10.1;
+
+  return Array.from({ length: 24 }, (_, i) => {
+    const hour = 23 - i;
+    const power = 1.4 + Math.abs(Math.sin(i * 0.65)) * 1.9;
+    energy += power / 24;
+
+    return {
+      recorded_at: new Date(now - hour * 3600000).toISOString(),
+      voltage_l1: 230,
+      voltage_l2: 231,
+      voltage_l3: 229,
+      current_l1: 4.9,
+      current_l2: 4.1,
+      current_l3: 3.6,
+      power_l1: power * 0.394 * 1000,
+      power_l2: power * 0.331 * 1000,
+      power_l3: power * 0.275 * 1000,
+      total_active_power: power * 1000,
+      energy_total_kwh: energy,
+      frequency_hz: 50,
+      power_factor: 0.96,
+      _demo: true
+    };
+  }).reverse();
+}
+
+function normalise(row) {
+  const n = key => row[key] == null ? null : Number(row[key]);
+
+  const p1 = n("power_l1");
+  const p2 = n("power_l2");
+  const p3 = n("power_l3");
+
+  return {
+    ...row,
+    voltage_l1: n("voltage_l1"),
+    voltage_l2: n("voltage_l2"),
+    voltage_l3: n("voltage_l3"),
+    current_l1: n("current_l1"),
+    current_l2: n("current_l2"),
+    current_l3: n("current_l3"),
+    power_l1: p1,
+    power_l2: p2,
+    power_l3: p3,
+    total_active_power:
+      n("total_active_power") ??
+      ((p1 ?? 0) + (p2 ?? 0) + (p3 ?? 0)),
+    energy_total_kwh: n("energy_total_kwh"),
+    frequency_hz: n("frequency_hz"),
+    power_factor: n("power_factor"),
+    _demo: false
+  };
+}
+
+function setupCharts() {
+  if (typeof Chart === "undefined") return;
+
+  powerChart = new Chart($("powerChart"), {
+    type: "line",
+    data: {
+      labels: [],
+      datasets: [{
+        label: "Puissance (kW)",
+        data: [],
+        borderColor: "#4263eb",
+        backgroundColor: "rgba(66,99,235,.12)",
+        fill: true,
+        tension: 0.35,
+        pointRadius: 2,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: "index" },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { maxTicksLimit: 7, maxRotation: 0 }
+        },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: "kW" }
+        }
+      }
+    }
+  });
+
+  phaseChart = new Chart($("phaseChart"), {
+    type: "doughnut",
+    data: {
+      labels: ["Phase L1", "Phase L2", "Phase L3"],
+      datasets: [{
+        data: [1120, 940, 780],
+        backgroundColor: ["#4263eb", "#18a999", "#f0a43a"],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "68%",
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { usePointStyle: true, padding: 18 }
+        }
+      }
+    }
+  });
+}
+
+function render() {
+  if (!measurements.length) {
+    $("measurementRows").innerHTML =
+      '<tr><td colspan="4">Aucune mesure disponible.</td></tr>';
+    return;
+  }
+
+  const latest = measurements[measurements.length - 1];
+  const p1 = latest.power_l1 ?? 0;
+  const p2 = latest.power_l2 ?? 0;
+  const p3 = latest.power_l3 ?? 0;
+  const totalW = latest.total_active_power ?? (p1 + p2 + p3);
+  const totalKW = totalW / 1000;
+  const energy = latest.energy_total_kwh;
+  const phaseTotal = Math.max(1, p1 + p2 + p3);
+
+  $("totalPower").innerHTML =
+    `${fmt(totalKW)} <span class="unit">kW</span>`;
+
+  $("totalEnergy").innerHTML =
+    `${energy == null ? "—" : fmt(energy)} <span class="unit">kWh</span>`;
+
+  $("totalCost").innerHTML =
+    `${energy == null ? "—" : fmt(energy * TARIFF_CHF_KWH)} <span class="unit">CHF</span>`;
+
+  $("p1").textContent = `${fmt(p1 / 1000)} kW`;
+  $("p2").textContent = `${fmt(p2 / 1000)} kW`;
+  $("p3").textContent = `${fmt(p3 / 1000)} kW`;
+
+  $("bar1").style.width = `${p1 / phaseTotal * 100}%`;
+  $("bar2").style.width = `${p2 / phaseTotal * 100}%`;
+  $("bar3").style.width = `${p3 / phaseTotal * 100}%`;
+
+  ["1", "2", "3"].forEach((n, i) => {
+    const phase = i + 1;
+    const voltage = latest[`voltage_l${phase}`];
+    const current = latest[`current_l${phase}`];
+
+    $(`v${n}`).textContent =
+      voltage == null ? "— V" : `${fmt(voltage, 1)} V`;
+
+    $(`a${n}`).textContent =
+      current == null ? "— A" : `${fmt(current, 2)} A`;
+  });
+
+  $("pf").textContent =
+    latest.power_factor == null ? "—" : fmt(latest.power_factor, 2);
+
+  $("hz").textContent =
+    latest.frequency_hz == null
+      ? "—"
+      : `${fmt(latest.frequency_hz, 1)} Hz`;
+
+  $("measurementRows").innerHTML = measurements
+    .slice()
+    .reverse()
+    .slice(0, 10)
+    .map(row => {
+      const date = new Date(row.recorded_at);
+      const dateText = Number.isNaN(date.getTime())
+        ? "Date inconnue"
+        : date.toLocaleString("fr-CH", {
+            day: "2-digit",
+            month: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+
+      const power = row.total_active_power == null
+        ? "—"
+        : `${fmt(row.total_active_power / 1000)} kW`;
+
+      const energyText = row.energy_total_kwh == null
+        ? "—"
+        : `${fmt(row.energy_total_kwh)} kWh`;
+
+      return `<tr>
+        <td>${dateText}</td>
+        <td><strong>${power}</strong></td>
+        <td>${energyText}</td>
+        <td><span class="badge">${row._demo ? "Démo" : "Supabase"}</span></td>
+      </tr>`;
+    }).join("");
+
+  if (powerChart) {
+    const periodHours = Number($("period").value);
+    const cutoff = Date.now() - periodHours * 3600000;
+    const filtered = measurements.filter(row =>
+      new Date(row.recorded_at).getTime() >= cutoff
+    );
+
+    powerChart.data.labels = filtered.map(row =>
+      new Date(row.recorded_at).toLocaleString("fr-CH", {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      })
+    );
+
+    powerChart.data.datasets[0].data = filtered.map(row =>
+      row.total_active_power == null
+        ? null
+        : Number((row.total_active_power / 1000).toFixed(3))
+    );
+
+    powerChart.update();
+  }
+
+  if (phaseChart) {
+    phaseChart.data.datasets[0].data = [p1, p2, p3];
+    phaseChart.update();
+  }
+
+  $("lastUpdate").textContent =
+    "Actualisé à " + new Date().toLocaleTimeString("fr-CH", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    });
+}
+
+async function initSupabase() {
+  const configured =
+    SUPABASE_URL.startsWith("https://") &&
+    !SUPABASE_URL.includes("TON-PROJET") &&
+    SUPABASE_ANON_KEY.length > 20 &&
+    !SUPABASE_ANON_KEY.includes("TA_CLE");
+
+  if (!configured) {
+    throw new Error(
+      "Supabase n'est pas configuré. Remplace l'URL et la clé publique dans le code."
+    );
+  }
+
+  if (!window.supabase) {
+    throw new Error("Impossible de charger la bibliothèque Supabase.");
+  }
+
+  supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+  const periodHours = Number($("period").value);
+  const cutoff = new Date(Date.now() - periodHours * 3600000).toISOString();
+
+  const { data, error } = await supabaseClient
+    .from(TABLE)
+    .select(
+      "recorded_at, voltage_l1, voltage_l2, voltage_l3, " +
+      "current_l1, current_l2, current_l3, " +
+      "power_l1, power_l2, power_l3, total_active_power, " +
+      "energy_total_kwh, frequency_hz, power_factor"
+    )
+    .gte("recorded_at", cutoff)
+    .order("recorded_at", { ascending: true })
+    .limit(2000);
+
+  if (error) throw error;
+
+  if (!data || data.length === 0) {
+    throw new Error(
+      "La connexion fonctionne, mais aucune mesure n'a été trouvée pour cette période."
+    );
+  }
+
+  measurements = data.map(normalise);
+}
+
+async function refreshData() {
+  currentMode = $("modeSelect").value;
+  $("modePill").textContent =
+    currentMode === "demo" ? "MODE DÉMO" : "MODE SUPABASE";
+
+  if (currentMode === "demo") {
+    measurements = demoMeasurements();
+    setConnection("Démo", "Valeurs fictives", false);
+    setNotice(
+      "Mode démo actif : ces données sont simulées et ne proviennent pas de ton installation électrique."
+    );
+    $("rangeLabel").textContent = "Mesures simulées";
+    render();
+    return;
+  }
+
+  $("connection").textContent = "Connexion…";
+  $("connectionDetail").textContent = "Lecture de Supabase";
+  $("connectionLed").classList.remove("ok");
+
+  try {
+    await initSupabase();
+    setConnection("Connecté", "Mesures reçues depuis Supabase", true);
+    setNotice(
+      "Mode Supabase : les valeurs affichées proviennent de la table measurements."
+    );
+    $("rangeLabel").textContent = "Données réelles stockées dans Supabase";
+    render();
+  } catch (error) {
+    measurements = [];
+    render();
+    setConnection("Erreur", "Lecture impossible", false);
+    setNotice(
+      "Erreur Supabase : " + error.message +
+      " Vérifie l'URL, la clé publique, le nom de la table et les politiques RLS."
+    );
+  }
+}
+
+function exportCSV() {
+  if (!measurements.length) {
+    alert("Aucune mesure à exporter.");
+    return;
+  }
+
+  const columns = [
+    "recorded_at", "voltage_l1", "voltage_l2", "voltage_l3",
+    "current_l1", "current_l2", "current_l3",
+    "power_l1", "power_l2", "power_l3",
+    "total_active_power", "energy_total_kwh",
+    "frequency_hz", "power_factor"
+  ];
+
+  const csv = [
+    columns.join(";"),
+    ...measurements.map(row =>
+      columns.map(col => row[col] ?? "").join(";")
+    )
+  ].join("\r\n");
+
+  const blob = new Blob(["\ufeff" + csv], {
+    type: "text/csv;charset=utf-8;"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "wattscope-mesures.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+$("modeSelect").addEventListener("change", refreshData);
+$("period").addEventListener("change", refreshData);
+
+setupCharts();
+refreshData();
+
+// En mode réel, recharge les données toutes les 30 secondes.
+setInterval(() => {
+  if ($("modeSelect").value === "live") refreshData();
+}, 30000);
+</script>
+</body>
+</html>
