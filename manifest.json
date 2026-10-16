@@ -1,0 +1,19 @@
+
+{
+  "name": "WattScope",
+  "short_name": "WattScope",
+  "description": "Surveillance de la consommation électrique triphasée",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#e1262f",
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
